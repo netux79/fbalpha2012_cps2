@@ -463,7 +463,7 @@ static void check_variables(void)
 void retro_run(void)
 {
    INT32 width, height;
-   BurnDrvGetVisibleSize(&width, &height);
+   BurnDrvGetFullSize(&width, &height);
    pBurnDraw = (uint8_t*)g_fba_frame;
 
    poll_input();
@@ -474,21 +474,8 @@ void retro_run(void)
    //nBurnSoundLen = AUDIO_SEGMENT_LENGTH;
 
    unsigned drv_flags = BurnDrvGetFlags();
-   uint32_t height_tmp = height;
    size_t pitch_size = sizeof(uint16_t);
-
-   switch (drv_flags & (BDF_ORIENTATION_FLIPPED | BDF_ORIENTATION_VERTICAL))
-   {
-      case BDF_ORIENTATION_VERTICAL:
-      case BDF_ORIENTATION_VERTICAL | BDF_ORIENTATION_FLIPPED:
-         nBurnPitch = height * pitch_size;
-         height = width;
-         width = height_tmp;
-         break;
-      case BDF_ORIENTATION_FLIPPED:
-      default:
-         nBurnPitch = width * pitch_size;
-   }
+   nBurnPitch = width * pitch_size;
 
    nCurrentFrame++;
    HiscoreApply();
@@ -566,7 +553,7 @@ void retro_cheat_set(unsigned, bool, const char*) {}
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    INT32 width, height;
-   BurnDrvGetVisibleSize(&width, &height);
+   BurnDrvGetFullSize(&width, &height);
    unsigned maximum = width > height ? width : height;
    struct retro_game_geometry geom = { (unsigned)width, (unsigned)height, maximum, maximum };
    struct retro_system_timing timing = { 59.629403, 59.629403 * AUDIO_SEGMENT_LENGTH };
@@ -597,13 +584,10 @@ static bool fba_init(unsigned driver, const char *game_zip_name)
    BurnStateLoad(input, 0, NULL);
 
    INT32 width, height;
-   BurnDrvGetVisibleSize(&width, &height);
+   BurnDrvGetFullSize(&width, &height);
    unsigned drv_flags = BurnDrvGetFlags();
    size_t pitch_size = nBurnBpp == 2 ? sizeof(uint16_t) : sizeof(uint32_t);
-   if (drv_flags & BDF_ORIENTATION_VERTICAL)
-      nBurnPitch = height * pitch_size;
-   else
-      nBurnPitch = width * pitch_size;
+   nBurnPitch = width * pitch_size;
 
    unsigned rotation;
    switch (drv_flags & (BDF_ORIENTATION_FLIPPED | BDF_ORIENTATION_VERTICAL))
